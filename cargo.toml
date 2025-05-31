@@ -1,0 +1,10 @@
+[package]
+name = "mymodel"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "mymodel"
+crate-type = ["cdylib"]
+
+[dependencies]
