@@ -5,6 +5,7 @@ pub struct LinearModel {
     pub epochs: usize,
 }
 
+
 impl LinearModel {
     pub fn new(n_features: usize, learning_rate: f64, epochs: usize) -> Self {
         Self {
@@ -15,48 +16,51 @@ impl LinearModel {
         }
     }
 
-    pub fn fit(&mut self, X: &Vec<Vec<f64>>, y: &Vec<f64>, activation: Option<fn(f64) -> f64>, derivative: Option<fn(f64) -> f64>) {
+    /// Entraînement (descente de gradient), avec ou sans activation
+    pub fn fit(
+        &mut self,
+        X: &Vec<Vec<f64>>,
+        y: &Vec<f64>,
+        activation: Option<fn(f64) -> f64>,
+        derivative: Option<fn(f64) -> f64>, // dérivée selon output (activation(z))
+    ) {
         for _ in 0..self.epochs {
             for (xi, &yi) in X.iter().zip(y.iter()) {
                 let z = self.predict_raw(xi);
+
+                // activation(z) ou z brut
                 let output = match activation {
-                    Some(activation_fn) => activation_fn(z),
+                    Some(f) => f(z),
                     None => z,
                 };
+
                 let error = output - yi;
 
-                // dérivée personnalisée pour tanh ou 1 pour linéaire
+                // Gradient avec dérivée personnalisée si activation
                 let gradient = match derivative {
-                    Some(deriv_fn) => deriv_fn(z) * error,
+                    Some(df) => df(output) * error, // dérivée appliquée à output activé
                     None => error,
                 };
 
                 for j in 0..self.weights.len() {
                     self.weights[j] -= self.learning_rate * gradient * xi[j];
                 }
+
                 self.bias -= self.learning_rate * gradient;
             }
         }
     }
 
     pub fn predict_raw(&self, x: &Vec<f64>) -> f64 {
-        self.weights.iter().zip(x.iter()).map(|(w, xi)| w * xi).sum::<f64>() + self.bias
+        self.weights
+            .iter()
+            .zip(x.iter())
+            .map(|(w, xi)| w * xi)
+            .sum::<f64>() + self.bias
     }
 
     pub fn predict(&self, x: &Vec<f64>, activation: Option<fn(f64) -> f64>) -> f64 {
         let z = self.predict_raw(x);
-        match activation {
-            Some(f) => f(z),
-            None => z,
-        }
+        activation.map_or(z, |f| f(z))
     }
-}
-
-// Fonctions d'activation
-pub fn tanh(x: f64) -> f64 {
-    x.tanh()
-}
-
-pub fn tanh_derivative(x: f64) -> f64 {
-    1.0 - x.tanh().powi(2)
 }

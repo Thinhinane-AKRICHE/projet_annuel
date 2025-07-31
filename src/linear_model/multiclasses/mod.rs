@@ -1,0 +1,2 @@
+pub mod tanh_one_vs_all_with_gradient_decent;
+pub mod softmax_with_gradient_descent;
